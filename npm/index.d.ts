@@ -34,6 +34,8 @@ export class Mutation {
 
   delete(id: any): Promise<void>
 
+  bulkDelete(id: any[]): Promise<void>
+
 }
 
 export class OQL {
