@@ -17,6 +17,9 @@ class Mutation_JS_NodePG private[oql] (oql: OQL_NodePG_JS, entity: Entity) exten
     if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get.name) else e
   ) toJSPromise
 
+  @JSExport("bulkDelete")
+  def jsBulkDelete(es: js.Array[js.Any]): js.Promise[Unit] = bulkDelete(es.toList) toJSPromise
+
   @JSExport("link")
   def jsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
     val id1: js.Any = if (jsObject(e1)) e1.asInstanceOf[js.Dictionary[String]](entity.pk.get.name) else e1

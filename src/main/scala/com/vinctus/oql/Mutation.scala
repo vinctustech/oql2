@@ -113,6 +113,18 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
     oql.connect.command(command.toString) map (_ => ())
   }
 
+  def bulkDelete(ids: List[Any]): Future[Unit] =
+    val command = new StringBuilder
+
+    // build delete command
+    command append s"DELETE FROM ${entity.table}\n"
+    command append s"  WHERE ${entity.pk.get.column} IN (${ids map (id => oql.render(id)) mkString ", "})\n"
+    oql.show(command.toString)
+
+    // execute update command (to get a future)
+    oql.connect.command(command.toString) map (_ => ())
+  end bulkDelete
+
   def link(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
       case Some(Attribute(name, column, pk, required, ManyToManyType(mtmEntity, link, self, target))) =>
