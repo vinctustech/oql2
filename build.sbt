@@ -4,7 +4,7 @@ version := "1.1.30"
 
 description := "Object Query Language"
 
-scalaVersion := "3.4.2"
+scalaVersion := "3.5.0"
 
 scalacOptions ++= Seq(
   "-deprecation",
