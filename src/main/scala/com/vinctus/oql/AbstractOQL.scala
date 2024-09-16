@@ -3,9 +3,7 @@ package com.vinctus.oql
 import com.vinctus.sjs_utils.DynamicMap
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.annotation.tailrec
-import scala.collection.immutable.VectorMap
+import scala.compiletime.uninitialized
 import scala.concurrent.Future
 import scala.scalajs.js
 
@@ -40,7 +38,7 @@ abstract class AbstractOQL(dm: String, val ds: SQLDataSource, conv: Conversions)
 
   def parseQuery(oql: String): OQLQuery = processQuery(OQLParser.parseQuery(oql), oql)
 
-  def processQuery(query: OQLQuery, oql: String): OQLQuery =
+  private def processQuery(query: OQLQuery, oql: String): OQLQuery =
     preprocessQuery(None, query, model, ds, oql) // todo: should be called "preprocessQuery" and do all decorating
     query.select foreach (decorate(query.entity, _, model, ds, oql))
     query.group foreach (_ foreach (decorate(query.entity, _, model, ds, oql)))
@@ -164,7 +162,7 @@ abstract class AbstractOQL(dm: String, val ds: SQLDataSource, conv: Conversions)
             case n @ ValueNode(expr) =>
               val v = resultSet.get(n.idx)
               val typ =
-                if (n.typed) ds.reverseMapType(resultSet getString (n.idx + 1))
+                if (n.typed) ds.reverseMapType(resultSet.getString(n.idx + 1))
                 else expr.typ
 
               (v, v.value, typ) match {
@@ -208,7 +206,7 @@ object AbstractOQL {
       case _: ManyToManyType => ManyToManyNode(query, objectNode(query.project))
     }
 
-  private[oql] def objectNode(projects: List[OQLProject]): ObjectNode = {
+  private def objectNode(projects: List[OQLProject]): ObjectNode = {
     ObjectNode(projects map { p =>
       (
         p.label.s,
@@ -707,15 +705,18 @@ object AbstractOQL {
         subquery
     }
 
-  trait Node
-  case class ResultNode(query: OQLQuery, element: Node) extends Node
-  case class ManyToOneNode(query: OQLQuery, element: Node) extends Node { var idx: Option[Int] = _ }
-  case class OneToOneNode(query: OQLQuery, element: Node) extends Node { var idx: Int = _ }
-  case class OneToManyNode(query: OQLQuery, element: Node) extends Node { var idx: Int = _ }
-  case class ManyToManyNode(query: OQLQuery, element: Node) extends Node { var idx: Int = _ }
-  case class ObjectNode(props: Seq[(String, Node)]) extends Node // todo: objects as a way of grouping expressions
-  case class TupleNode(elems: Seq[Node]) extends Node // todo: tuples as a way of grouping expressions
-  case class ValueNode(value: OQLExpression) extends Node { var idx: Int = _; var typed: Boolean = _ }
+  private[oql] trait Node
+  private case class ResultNode(query: OQLQuery, element: Node) extends Node
+  private case class ManyToOneNode(query: OQLQuery, element: Node) extends Node { var idx: Option[Int] = uninitialized }
+  private case class OneToOneNode(query: OQLQuery, element: Node) extends Node { var idx: Int = uninitialized }
+  private case class OneToManyNode(query: OQLQuery, element: Node) extends Node { var idx: Int = uninitialized }
+  private case class ManyToManyNode(query: OQLQuery, element: Node) extends Node { var idx: Int = uninitialized }
+  private case class ValueNode(value: OQLExpression) extends Node {
+    var idx: Int = uninitialized; var typed: Boolean = uninitialized
+  }
+  private case class ObjectNode(props: Seq[(String, Node)])
+      extends Node // todo: objects as a way of grouping expressions
+//  private case class TupleNode(elems: Seq[Node]) extends Node // todo: tuples as a way of grouping expressions
 
 }
 
