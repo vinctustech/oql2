@@ -13,163 +13,177 @@ object JSON {
   private val EOI = '\uE000'
   private val ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
-  def readArray(json: String): IndexedSeq[Any] = {
-    var idx: Int = 0
+  private var idx: Int = 0
+  private var json: String = ""
 
-    def next: Char =
-      if (idx > json.length) sys.error("past end of JSON string")
-      else if (idx == json.length) EOI
-      else json.charAt(idx)
+  def next: Char =
+    if (idx > json.length) sys.error("past end of JSON string")
+    else if (idx == json.length) EOI
+    else json.charAt(idx)
 
-    def ch: Char = {
-      val c = next
+  def ch: Char = {
+    val c = next
 
-      advance()
-      c
-    }
+    advance()
+    c
+  }
 
-    def advance(): Unit = idx += 1
+  def advance(): Unit = idx += 1
 
-    def prev: Char = json.charAt(idx - 1)
+  def prev: Char = json.charAt(idx - 1)
 
-    def space(): Unit = while (next.isWhitespace) advance()
+  def space(): Unit = while (next.isWhitespace) advance()
 
-    def chmatch(c: Char): Unit =
-      if (ch != c)
-        error(
-          if (c == EOI) "expected end of input" else s"expected '$c', but found '$prev':\n$json\n${(" " * idx) :+ '^'}"
-        )
+  def chmatch(c: Char): Unit =
+    if (ch != c)
+      error(
+        if (c == EOI) "expected end of input" else s"expected '$c', but found '$prev':\n$json\n${(" " * idx) :+ '^'}"
+      )
 
-    def delim(c: Char): Unit = {
-      chmatch(c)
-      space()
-    }
+  def delim(c: Char): Unit = {
+    chmatch(c)
+    space()
+  }
 
-    def readArray: IndexedSeq[Any] = {
-      val buf = new ArrayBuffer[Any]
+  def readArray: IndexedSeq[Any] = {
+    val buf = new ArrayBuffer[Any]
 
-      delim('[')
+    delim('[')
 
-      @tailrec
-      def elem(): Unit = {
-        buf += readValue
+    @tailrec
+    def elem(): Unit = {
+      buf += readValue
 
-        if (next == ',') {
-          advance()
-          space()
-          elem()
-        }
-      }
-
-      if (next != ']')
-        elem()
-
-      delim(']')
-      buf to ArraySeq
-    }
-
-    def readObject: ListMap[String, Any] = {
-      val buf = new ListBuffer[(String, Any)]
-
-      delim('{')
-
-      @tailrec
-      def elem(): Unit = {
-        val key = readString
-
-        delim(':')
-
-        buf += ((key, readValue))
-
-        if (next == ',') {
-          advance()
-          space()
-          elem()
-        }
-      }
-
-      if (next != '}')
-        elem()
-
-      delim('}')
-      buf to ListMap
-    }
-
-    def error(str: String) = sys.error(str)
-
-    def readValue: Any =
-      next match {
-        case `EOI`                      => error("unexpected end of JSON string")
-        case '['                        => readArray
-        case '{'                        => readObject
-        case '"'                        => readString
-        case d if d.isDigit || d == '-' => readNumber
-        case 'n'                        => value("null", null)
-        case 't'                        => value("true", true)
-        case 'f'                        => value("false", false)
-      }
-
-    def readString: String = {
-      val buf = new StringBuilder
-
-      chmatch('"')
-
-      @tailrec
-      def content(): Unit =
-        ch match {
-          case '\\' =>
-            buf +=
-              (ch match {
-                case '\\' => '\\'
-                case '"'  => '"'
-                case '/'  => '/'
-                case 'b'  => '\b'
-                case 'f'  => '\f'
-                case 'n'  => '\n'
-                case 'r'  => '\r'
-                case 't'  => '\t'
-                case 'u'  => (hex(ch) << 12 | hex(ch) << 8 | hex(ch) << 4 | hex(ch)).toChar
-              })
-            content()
-          case '"' =>
-          case c =>
-            buf += c
-            content()
-        }
-
-      content()
-      space()
-
-      buf.toString
-    }
-
-    def readNumber: String = {
-      val buf = new StringBuilder
-      var c: Char = next
-
-      while (c.isDigit || c == '.' || c == '-' || c == 'e' || c == 'E') {
-        buf += c
+      if (next == ',') {
         advance()
-        c = next
+        space()
+        elem()
       }
-
-      space()
-      buf.toString
     }
 
-    def value(s: String, v: Any): Any = {
-      for (i <- 0 until s.length) {
-        if (next == EOI) error(s"unexpected end of JSON string: trying to match '$s'")
-        else if (ch != s.charAt(i)) error(s"mismatch")
+    if (next != ']')
+      elem()
+
+    delim(']')
+    buf to ArraySeq
+  }
+
+  def readObject: ListMap[String, Any] = {
+    val buf = new ListBuffer[(String, Any)]
+
+    delim('{')
+
+    @tailrec
+    def elem(): Unit = {
+      val key = readString
+
+      delim(':')
+
+      buf += ((key, readValue))
+
+      if (next == ',') {
+        advance()
+        space()
+        elem()
+      }
+    }
+
+    if (next != '}')
+      elem()
+
+    delim('}')
+    buf to ListMap
+  }
+
+  def error(str: String) = sys.error(str)
+
+  def readValue: Any =
+    next match {
+      case `EOI`                      => error("unexpected end of JSON string")
+      case '['                        => readArray
+      case '{'                        => readObject
+      case '"'                        => readString
+      case d if d.isDigit || d == '-' => readNumber
+      case 'n'                        => literal("null", null)
+      case 't'                        => literal("true", true)
+      case 'f'                        => literal("false", false)
+    }
+
+  def readString: String = {
+    val buf = new StringBuilder
+
+    chmatch('"')
+
+    @tailrec
+    def content(): Unit =
+      ch match {
+        case '\\' =>
+          buf +=
+            (ch match {
+              case '\\' => '\\'
+              case '"'  => '"'
+              case '/'  => '/'
+              case 'b'  => '\b'
+              case 'f'  => '\f'
+              case 'n'  => '\n'
+              case 'r'  => '\r'
+              case 't'  => '\t'
+              case 'u'  => (hex(ch) << 12 | hex(ch) << 8 | hex(ch) << 4 | hex(ch)).toChar
+            })
+          content()
+        case '"' =>
+        case c =>
+          buf += c
+          content()
       }
 
-      space()
-      v
+    content()
+    space()
+
+    buf.toString
+  }
+
+  def readNumber: String = {
+    val buf = new StringBuilder
+    var c: Char = next
+
+    while (c.isDigit || c == '.' || c == '-' || c == 'e' || c == 'E') {
+      buf += c
+      advance()
+      c = next
     }
 
     space()
+    buf.toString
+  }
+
+  def literal(s: String, v: Any): Any = {
+    for (i <- 0 until s.length) {
+      if (next == EOI) error(s"unexpected end of JSON string: trying to match '$s'")
+      else if (ch != s.charAt(i)) error(s"mismatch")
+    }
+
+    space()
+    v
+  }
+
+  def readArray(s: String): IndexedSeq[Any] = {
+    idx = 0
+    json = s
+    space()
 
     val v = readArray
+
+    chmatch(EOI)
+    v
+  }
+
+  def readValue(s: String): Any = {
+    idx = 0
+    json = s
+    space()
+
+    val v = readValue
 
     chmatch(EOI)
     v
