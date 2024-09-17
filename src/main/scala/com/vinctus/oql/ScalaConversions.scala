@@ -14,7 +14,7 @@ object ScalaConversions extends Conversions {
 
   def decimal(n: String, precision: Int, scale: Int): Any = BigDecimal(n).setScale(scale)
 
-  def jsonNodePG(v: js.Any): Any = fromJS(v)
+  def jsonNodePG(v: String): Any = JSON.readValue(v)
 
   def jsonSequence(v: Any): Any = v
 

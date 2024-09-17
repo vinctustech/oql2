@@ -19,14 +19,14 @@ import io.github.edadma.rdb
   types.setTypeParser(114.asInstanceOf[TypeId], (s: String) => s) // tell node-pg not to parse JSON
   types.setTypeParser(1114.asInstanceOf[TypeId], (s: String) => new js.Date(s"$s+00:00"))
 
-  val db = new OQL_RDB_ScalaJS(
-    """
-      |entity a {
-      | *id: int
-      |  t: timestamp
-      |}
-      |""".trim.stripMargin
-  )
+//  val db = new OQL_RDB_ScalaJS(
+//    """
+//      |entity a {
+//      | *id: int
+//      |  t: timestamp
+//      |}
+//      |""".trim.stripMargin
+//  )
 
 //  val db = new OQL_RDB_ScalaJS(
 //    """
@@ -88,21 +88,21 @@ import io.github.edadma.rdb
 //      }
 //  }
 
-  rdb.executeSQL(
-    """
-      |CREATE TABLE "a" (
-      |  "id" INTEGER PRIMARY KEY,
-      |  "t" TIMESTAMP
-      |);
-      |INSERT INTO "a" ("id", "t") VALUES
-      |  (3, '2021-04-21T06:30:00.000Z'),
-      |  (4, '2022-04-21T06:30:00.000Z');
-      |""".stripMargin
-  )(
-    db.connect
-      .asInstanceOf[RDBConnection]
-      .db
-  )
+//  rdb.executeSQL(
+//    """
+//      |CREATE TABLE "a" (
+//      |  "id" INTEGER PRIMARY KEY,
+//      |  "t" TIMESTAMP
+//      |);
+//      |INSERT INTO "a" ("id", "t") VALUES
+//      |  (3, '2021-04-21T06:30:00.000Z'),
+//      |  (4, '2022-04-21T06:30:00.000Z');
+//      |""".stripMargin
+//  )(
+//    db.connect
+//      .asInstanceOf[RDBConnection]
+//      .db
+//  )
 
 //  rdb.executeSQL(
 //    """
@@ -160,20 +160,20 @@ import io.github.edadma.rdb
 //      |""".stripMargin
 //  )
 
-  db.showQuery()
-
-  (for
-    //    _ <- db.create
-//    u <- db.entity("employee").update(104, Map("firstName" -> js.undefined, "lastName" -> "Lee"))
-//    i <- { db.entity("department").insert(Map("id" -> 123, "departmentName" -> "RnR")) }
-    r <- { db.showQuery(); db.queryMany("a [t::timestamp = '2021-04-21T06:30:00.000Z'::timestamp]") } // a {* bs}
-  yield (r))
-    .onComplete {
-      case Failure(exception) => exception.printStackTrace()
-      case Success((r))       =>
-//        println(u)
-        println(r)
-    }
+//  db.showQuery()
+//
+//  (for
+//    //    _ <- db.create
+////    u <- db.entity("employee").update(104, Map("firstName" -> js.undefined, "lastName" -> "Lee"))
+////    i <- { db.entity("department").insert(Map("id" -> 123, "departmentName" -> "RnR")) }
+//    r <- { db.showQuery(); db.queryMany("a [t::timestamp = '2021-04-21T06:30:00.000Z'::timestamp]") } // a {* bs}
+//  yield (r))
+//    .onComplete {
+//      case Failure(exception) => exception.printStackTrace()
+//      case Success((r))       =>
+////        println(u)
+//        println(r)
+//    }
 
 //    new OQL_NodePG_ScalaJS(g.require("fs").readFileSync("test/json.dm").toString, "localhost", 5432, "postgres", "postgres", "docker", false, 1000, 5)
   // new OQL_NodePG_JS(g.require("fs").readFileSync("test/json.dm").toString, "localhost", 5432, "postgres", "postgres", "docker", false, 1000, 5)
@@ -196,9 +196,9 @@ import io.github.edadma.rdb
 //    println(await(db.queryMany("""store""", "account", 2)))
 //    println(await(db.jsQueryMany("attendee { * events <when> } <name>").toFuture map (v => JSON(v, db.ds.platformSpecific, 2, true))))
 
-  def stringify(x: Any) = js.JSON.stringify(x.asInstanceOf[js.Any], null.asInstanceOf[js.Array[js.Any]], 2)
-
-}
+//  def stringify(x: Any) = js.JSON.stringify(x.asInstanceOf[js.Any], null.asInstanceOf[js.Array[js.Any]], 2)
+//
+//}
 
 //package com.vinctus.oql
 //
@@ -270,26 +270,26 @@ import io.github.edadma.rdb
 //
 //}
 
-//  val dm: String =
-//    """
-//      |entity t {
-//      | *id: int
-//      |  s: text
-//      |}
-//      |""".stripMargin
-//  val db = new OQL_NodePG_JS(dm, "localhost", 5432, "postgres", "postgres", "docker", false, 1000, 5)
-//
-//  db.showQuery()
+  val dm: String =
+    """
+      |entity t {
+      | *id: int
+      |  a: json
+      |}
+      |""".stripMargin
+  val db = new OQL_NodePG_JS(dm, "localhost", 5432, "postgres", "postgres", "docker", false, 1000, 5)
+
+  db.showQuery()
 //  db.entity("t").jsInsert(js.Dictionary("s" -> "asdf'zxcv")).toFuture onComplete {
 //    case Success(value) =>
 //      console.log(value)
 //
 //      val id = value.asInstanceOf[js.Dictionary[Int]]("id")
-//
-//      db.jsqueryMany("t").toFuture onComplete {
-//        case Success(value) =>
-//          console.log(value)
-//
+
+  db.jsQueryMany("t").toFuture onComplete {
+    case Success(value) =>
+      console.log("result: ", value)
+
 //          db.showQuery()
 //          db.entity("t").jsUpdate(id, js.Dictionary("s" -> "this is\nanother test")).toFuture onComplete {
 //            case Success(value) =>
@@ -301,12 +301,12 @@ import io.github.edadma.rdb
 //              }
 //            case Failure(exception) => exception.printStackTrace()
 //          }
-//        case Failure(exception) => exception.printStackTrace()
-//      }
+    case Failure(exception) => exception.printStackTrace()
+  }
 //    case Failure(exception) => exception.printStackTrace()
 //  }
-//
-//}
+
+}
 
 // todo: RDB insert without primary key value doesn't work
 // todo: error check for query type projects that are really datatype attributes: make sure there's no select, order, ...

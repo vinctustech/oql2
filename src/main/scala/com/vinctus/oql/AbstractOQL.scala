@@ -172,7 +172,7 @@ abstract class AbstractOQL(dm: String, val ds: SQLDataSource, conv: Conversions)
                 case (_, s: String, UUIDType)                      => conv.uuid(s)
                 case (_, t: String, TimestampType)                 => conv.timestamp(t)
                 case (_, d: String, DecimalType(precision, scale)) => conv.decimal(d, precision, scale)
-                case (NodePGResultSetValue(v), _, JSONType)        => conv.jsonNodePG(v.asInstanceOf[js.Any])
+                case (NodePGResultSetValue(v), _, JSONType)        => conv.jsonNodePG(v.asInstanceOf[String])
                 case (SequenceResultSetValue(v), _, JSONType)      => conv.jsonSequence(v)
                 case _                                             => v.value
               }
