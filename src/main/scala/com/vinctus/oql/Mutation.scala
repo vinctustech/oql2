@@ -1,12 +1,11 @@
 package com.vinctus.oql
 
-//import com.vinctus.mappable.{Mappable, map2cc}
-import com.vinctus.sjs_utils.DynamicMap
-
 import scala.collection.immutable.VectorMap
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.scalajs.js
+
+import pprint.pprintln
 
 class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scala.concurrent.ExecutionContext) {
 
