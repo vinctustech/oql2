@@ -39,8 +39,10 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
         case _                                                               => false
       } keySet
 
+    val objNoUndefined = obj.filter((_, v) => v != js.undefined)
+
     // get object's key set
-    val keyset = obj.filter((_, v) => v != js.undefined).keySet
+    val keyset = objNoUndefined.keySet
 
     // get key set of all attributes
     val allKeys = entity.attributes.keySet
@@ -62,10 +64,10 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
     // build list of values to insert
     val pairs =
       attrs flatMap {
-        case (k, Attribute(name, column, pk, required, typ)) if typ.isDataType && obj.contains(k) =>
-          List(k -> oql.render(obj(k), Option.when(typ == JSONType)(typ.asDatatype)))
-        case (k, Attribute(_, _, _, _, ManyToOneType(mtoEntity))) if obj contains k =>
-          val v = obj(k)
+        case (k, Attribute(name, column, pk, required, typ)) if typ.isDataType && objNoUndefined.contains(k) =>
+          List(k -> oql.render(objNoUndefined(k), Option.when(typ == JSONType)(typ.asDatatype)))
+        case (k, Attribute(_, _, _, _, ManyToOneType(mtoEntity))) if objNoUndefined contains k =>
+          val v = objNoUndefined(k)
 
           List(
             k -> oql.render(
@@ -95,8 +97,8 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
         sys.error("insert: empty result set")
 
       entity.pk match {
-        case None     => obj to VectorMap
-        case Some(pk) => (VectorMap(pk.name -> rs.get(0).value) ++ obj) to VectorMap
+        case None     => objNoUndefined to VectorMap
+        case Some(pk) => (VectorMap(pk.name -> rs.get(0).value) ++ objNoUndefined) to VectorMap
       }
     }
   end insert
