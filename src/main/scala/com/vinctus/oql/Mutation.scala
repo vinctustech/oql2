@@ -10,16 +10,13 @@ import scala.scalajs.js
 
 class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scala.concurrent.ExecutionContext) {
 
-//  def insert[T <: Product: Mappable](obj: T): Future[T] =
-//    insert(implicitly[Mappable[T]].toMap(obj)) map map2cc[T] //implicitly[Mappable[T]].fromMap(m))
-
   def insert(obj: collection.Map[String, Any]): Future[VectorMap[String, Any]] =
-//    // check if the object has a primary key
-//    entity.pk foreach { pk =>
-//      // object being inserted should not have a primary key property
-//      if (obj.contains(pk.name)) // todo: && obj(pk.name).asInstanceOf[js.UndefOr[_]] != js.undefined
-//        sys.error(s"insert(): object has a primary key property: $pk = ${obj(pk.name)}")
-//    }
+    // check if the object has a primary key
+    entity.pk foreach { pk =>
+      // object being inserted should not have a primary key property
+      if (obj.contains(pk.name) && obj(pk.name).asInstanceOf[js.UndefOr[String]] != js.undefined)
+        sys.error(s"insert(): object has a primary key property: $pk = ${obj(pk.name)}")
+    }
 
     // get sub-map of all column attributes
     val attrs =
@@ -61,7 +58,7 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
 
     // build list of values to insert
     val pairs =
-      attrs flatMap {
+      attrsNoPK flatMap {
         case (k, Attribute(name, column, pk, required, typ)) if typ.isDataType && obj.contains(k) =>
           List(k -> oql.render(obj(k), Option.when(typ == JSONType)(typ.asDatatype)))
         case (k, Attribute(_, _, _, _, ManyToOneType(mtoEntity))) if obj contains k =>
@@ -81,7 +78,7 @@ class Mutation private[oql] (oql: AbstractOQL, entity: Entity)(implicit ec: scal
     val (keys, values) = pairs.unzip
 
     // transform list of keys into un-aliased column names
-    val columns = keys map (k => attrs(k).column)
+    val columns = keys map (k => attrsNoPK(k).column)
 
     // build insert command
     command append s"INSERT INTO ${entity.table} (${columns mkString ", "}) VALUES\n"

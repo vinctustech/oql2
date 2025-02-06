@@ -17,7 +17,8 @@ class NodePGResultSet(rs: QueryArrayResult[js.Array[js.Any]]) extends OQLResultS
       ridx = 0
     }
 
-    if (ridx >= rs.rowCount)
+    if rs.rowCount == null then sys.error("QueryArrayResult.rowCount is null")
+    else if (ridx >= rs.rowCount.asInstanceOf[Double])
       false
     else {
       row = rs.rows(ridx)
